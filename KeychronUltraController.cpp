@@ -16,6 +16,13 @@
 #define SUB_SET_DIRECT_MODE      0x02
 #define SUB_SET_LEDS             0x03
 #define SUB_GET_LED_INFO         0x04
+#define SUB_MIXED_GET_INFO       0x10
+#define SUB_MIXED_GET_REGIONS    0x11
+#define SUB_MIXED_SET_REGIONS    0x12
+#define SUB_MIXED_GET_EFFECTS   0x13
+#define SUB_MIXED_SET_EFFECTS   0x14
+#define SUB_SET_MIXED_MODE      0x15
+#define SUB_MIXED_SAVE          0x16
 
 #define KEEPALIVE_INTERVAL_MS    1500
 
@@ -270,6 +277,103 @@ unsigned int KeychronUltraController::GetLEDCount()
         return((unsigned int)(resp[2] | (resp[3] << 8)));
     }
     return(0);
+}
+
+bool KeychronUltraController::SetMixedMode(bool enable)
+{
+    if(enable)
+    {
+        SetDirectMode(false);
+    }
+
+    unsigned char pkt[3] = { OPENRGB_CMD, SUB_SET_MIXED_MODE,
+                             (unsigned char)(enable ? 1 : 0) };
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    return(xfer(pkt, sizeof(pkt), resp) > 0 && resp[0] == OPENRGB_CMD
+           && resp[2] == 0);
+}
+
+bool KeychronUltraController::GetMixedInfo(unsigned char& layers,
+                                            unsigned char& effects_per_layer)
+{
+    unsigned char pkt[2] = { OPENRGB_CMD, SUB_MIXED_GET_INFO };
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    if(xfer(pkt, sizeof(pkt), resp) <= 0 || resp[0] != OPENRGB_CMD || resp[2] != 0)
+        return(false);
+    layers = resp[3];
+    effects_per_layer = resp[4];
+    return(true);
+}
+
+bool KeychronUltraController::GetMixedRegions(unsigned int start, unsigned int count,
+                                               std::vector<unsigned char>& masks)
+{
+    if(count == 0 || count > 28 || start + count > expected_leds)
+        return(false);
+    unsigned char pkt[4] = { OPENRGB_CMD, SUB_MIXED_GET_REGIONS,
+                             (unsigned char)start, (unsigned char)count };
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    if(xfer(pkt, sizeof(pkt), resp) <= 0 || resp[0] != OPENRGB_CMD || resp[2] != 0)
+        return(false);
+    masks.assign(resp + 3, resp + 3 + count);
+    return(true);
+}
+
+bool KeychronUltraController::SetMixedRegions(unsigned int start,
+                                               const std::vector<unsigned char>& masks)
+{
+    if(masks.empty() || masks.size() > 28 || start + masks.size() > expected_leds)
+        return(false);
+    unsigned char pkt[KEYCHRON_ULTRA_EPSIZE];
+    pkt[0] = OPENRGB_CMD;
+    pkt[1] = SUB_MIXED_SET_REGIONS;
+    pkt[2] = (unsigned char)start;
+    pkt[3] = (unsigned char)masks.size();
+    for(size_t i = 0; i < masks.size(); i++)
+        pkt[4 + i] = masks[i];
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    return(xfer(pkt, 4 + masks.size(), resp) > 0 && resp[0] == OPENRGB_CMD
+           && resp[2] == 0);
+}
+
+bool KeychronUltraController::GetMixedEffect(unsigned char layer, unsigned char slot,
+                                              KeychronMixedEffect& effect)
+{
+    if(layer >= 3 || slot >= 3)
+        return(false);
+    unsigned char pkt[5] = { OPENRGB_CMD, SUB_MIXED_GET_EFFECTS, layer, slot, 1 };
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    if(xfer(pkt, sizeof(pkt), resp) <= 0 || resp[0] != OPENRGB_CMD || resp[2] != 0)
+        return(false);
+    effect.effect = resp[3];
+    effect.hue = resp[4];
+    effect.saturation = resp[5];
+    effect.speed = resp[6];
+    effect.time = (unsigned int)resp[7] | ((unsigned int)resp[8] << 8)
+                | ((unsigned int)resp[9] << 16) | ((unsigned int)resp[10] << 24);
+    return(true);
+}
+
+bool KeychronUltraController::SetMixedEffect(unsigned char layer, unsigned char slot,
+                                              const KeychronMixedEffect& effect)
+{
+    if(layer >= 3 || slot >= 3)
+        return(false);
+    unsigned char pkt[13] = { OPENRGB_CMD, SUB_MIXED_SET_EFFECTS, layer, slot, 1,
+                              effect.effect, effect.hue, effect.saturation, effect.speed,
+                              (unsigned char)(effect.time & 0xFF),
+                              (unsigned char)((effect.time >> 8) & 0xFF),
+                              (unsigned char)((effect.time >> 16) & 0xFF),
+                              (unsigned char)((effect.time >> 24) & 0xFF) };
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    return(xfer(pkt, sizeof(pkt), resp) > 0 && resp[0] == OPENRGB_CMD && resp[2] == 0);
+}
+
+bool KeychronUltraController::SaveMixedSettings()
+{
+    unsigned char pkt[2] = { OPENRGB_CMD, SUB_MIXED_SAVE };
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    return(xfer(pkt, sizeof(pkt), resp) > 0 && resp[0] == OPENRGB_CMD && resp[2] == 0);
 }
 
 void KeychronUltraController::SetDirectMode(bool enable)
