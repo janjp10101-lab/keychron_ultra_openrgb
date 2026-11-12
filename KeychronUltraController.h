@@ -36,7 +36,7 @@
 | be turned away instead of being driven with the wrong wire |
 | format.                                                    |
 \*---------------------------------------------------------*/
-#define KEYCHRON_ULTRA_PROTOCOL_VERSION 1
+#define KEYCHRON_ULTRA_PROTOCOL_VERSION 2
 
 /*---------------------------------------------------------*\
 | SET_LEDS and GET_LED_INFO carry the LED index in a single  |
@@ -62,6 +62,15 @@
 \*---------------------------------------------------------*/
 #define KEYCHRON_ULTRA_RECONNECT_COOLDOWN_MS 2000
 
+struct KeychronMixedEffect
+{
+    unsigned char effect;
+    unsigned char hue;
+    unsigned char saturation;
+    unsigned char speed;
+    unsigned int  time;
+};
+
 class KeychronUltraController
 {
 public:
@@ -77,6 +86,15 @@ public:
     void           SetDirectMode(bool enable);
     void           EnsureDirect();         // enter direct + start keepalive if not already
     void           SetLEDs(const std::vector<RGBColor>& colors);
+
+    /* Firmware protocol v2: on-device Mixed RGB layers. */
+    bool           SetMixedMode(bool enable);
+    bool           GetMixedInfo(unsigned char& layers, unsigned char& effects_per_layer);
+    bool           GetMixedRegions(unsigned int start, unsigned int count, std::vector<unsigned char>& masks);
+    bool           SetMixedRegions(unsigned int start, const std::vector<unsigned char>& masks);
+    bool           GetMixedEffect(unsigned char layer, unsigned char slot, KeychronMixedEffect& effect);
+    bool           SetMixedEffect(unsigned char layer, unsigned char slot, const KeychronMixedEffect& effect);
+    bool           SaveMixedSettings();
 
     /*-----------------------------------------------------------------------*\
     | Put the board back the way it looked before a rescan destroyed the old   |
