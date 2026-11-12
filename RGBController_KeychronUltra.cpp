@@ -202,7 +202,8 @@ void RGBController_KeychronUltra::SetCustomMode()
 bool RGBController_KeychronUltra::ConfigureMixedLayer(unsigned char layer, bool enabled,
                                                         unsigned char hue,
                                                         unsigned char saturation,
-                                                        unsigned char speed)
+                                                        unsigned char speed,
+                                                        unsigned char brightness)
 {
     if(layer >= 3)
         return(false);
@@ -220,6 +221,7 @@ bool RGBController_KeychronUltra::ConfigureMixedLayer(unsigned char layer, bool 
     effect.hue = hue;
     effect.saturation = saturation;
     effect.speed = speed;
+    effect.value = brightness;
     return(controller->SetMixedEffect(layer, 0, effect));
 }
 
