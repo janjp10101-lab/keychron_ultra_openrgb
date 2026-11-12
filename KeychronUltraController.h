@@ -95,6 +95,7 @@ public:
     bool           GetMixedEffect(unsigned char layer, unsigned char slot, KeychronMixedEffect& effect);
     bool           SetMixedEffect(unsigned char layer, unsigned char slot, const KeychronMixedEffect& effect);
     bool           SaveMixedSettings();
+    bool           SetMasterBrightness(unsigned char brightness);
 
     /*-----------------------------------------------------------------------*\
     | Put the board back the way it looked before a rescan destroyed the old   |
