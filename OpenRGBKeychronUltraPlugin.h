@@ -47,6 +47,9 @@ private:
                                         unsigned char speed, unsigned char brightness);
     bool                ApplyMixedBrightness(unsigned char brightness);
     bool                SaveMixedSettings();
+    bool                ReadMixedLayer(unsigned char layer, KeychronMixedEffect& effect,
+                                        bool& enabled);
+    bool                ReadMixedBrightness(unsigned char& brightness);
 
     ResourceManagerInterface*                    rm = nullptr;
     std::vector<RGBController_KeychronUltra*>  registered;
