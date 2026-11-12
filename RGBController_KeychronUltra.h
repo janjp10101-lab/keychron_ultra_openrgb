@@ -31,7 +31,7 @@ public:
     void        SetCustomMode();
     bool        ConfigureMixedLayer(unsigned char layer, bool enabled,
                                     unsigned char hue, unsigned char saturation,
-                                    unsigned char speed);
+                                    unsigned char speed, unsigned char brightness);
     bool        SaveMixedConfiguration();
     bool        SetMixedMasterBrightness(unsigned char brightness);
 
