@@ -50,7 +50,8 @@ RGBController_KeychronUltra::RGBController_KeychronUltra(KeychronUltraController
 
     SetupZones();
 
-    active_mode = MODE_DIRECT;
+    active_mode = MODE_MIXED_RGB;
+    controller->SetMixedMode(true);
 }
 
 RGBController_KeychronUltra::~RGBController_KeychronUltra()
