@@ -1,7 +1,7 @@
 # OpenRGB plugin - Keychron Ultra series (custom ZMK firmware)
 
-Adds Keychron **V-series and Q-series Ultra** keyboards to OpenRGB as
-directly-controllable per-key RGB devices. Requires the keyboard to be running
+Adds Keychron **V-series and Q-series Ultra** keyboards to OpenRGB with
+**on-keyboard Mixed RGB layers** plus the original Direct per-key mode. Requires the keyboard to be running
 the **custom ZMK firmware** with OpenRGB direct-control support (ZMK issue #893).
 Stock Keychron firmware will not respond and the device won't appear.
 
@@ -14,7 +14,7 @@ Target: **OpenRGB 1.0rc3**, plugin API v4. Prebuilt for **Windows** (x64/x86); o
 
 ## Companion firmware
 
-[naaraxi/zmk (branch `openrgb`)](https://github.com/naaraxi/zmk/tree/openrgb) is the
+[janjp10101-lab/zmk (branch `v4-multiwave-random-palette-test`)](https://github.com/janjp10101-lab/zmk/tree/v4-multiwave-random-palette-test) is the
 custom ZMK build this plugin talks to, plus the host flasher. Each board has its own
 shield there (for example `keychron_v6_ultra_ansi`).
 
@@ -52,13 +52,20 @@ one of these boards, testing and corrections are welcome (open an issue).
 ## How it works
 
 The custom firmware exposes an `id_openrgb` (0x16) command on its raw-HID channel
-(USB usage page `0xFF60`). This plugin enumerates the known Ultra PIDs, verifies
-each device is running the custom firmware (`GET_LED_COUNT` returns a nonzero
-count), matches the board by that count, and registers an `RGBController` with a
-**Direct** mode. Selecting Direct hands the keyboard to OpenRGB; a background
-keepalive re-arms the firmware's 3-second auto-hand-back watchdog so colors
-persist, and control returns to your onboard/Launcher lighting when OpenRGB exits
-or the keyboard goes wireless (USB-only).
+(USB usage page `0xFF60`). The plugin registers both **Direct** mode (OpenRGB
+streams per-key colors) and **Mixed RGB** mode (the keyboard renders its own
+effects locally).
+
+The Mixed RGB plugin tab provides three independently configurable layers:
+- Static per-key layer: enable, color, brightness
+- Spiral layer: enable, color, speed, brightness
+- Keypress splash layer: enable, color, speed, brightness
+- Master brightness and **Save to keyboard**
+
+Mixed RGB uses firmware protocol **v3**. The plugin checks the reported protocol
+version before registering the device, so it will not send the expanded v3
+effect records to older firmware. Direct mode remains available on matching v3
+firmware as a fallback.
 
 Caps/Num-Lock indicators still overlay on top (handled in firmware).
 
