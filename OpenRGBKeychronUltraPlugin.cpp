@@ -201,16 +201,37 @@ void OpenRGBKeychronUltraPlugin::DetectControllers()
     }
 }
 
+bool OpenRGBKeychronUltraPlugin::ApplyMixedLayer(unsigned char layer, bool enabled,
+                                                       unsigned char hue,
+                                                       unsigned char saturation,
+                                                       unsigned char speed)
+{
+    std::lock_guard<std::mutex> lock(registered_mutex);
+    return(!registered.empty() &&
+           registered.front()->ConfigureMixedLayer(layer, enabled, hue, saturation, speed));
+}
+
+bool OpenRGBKeychronUltraPlugin::ApplyMixedBrightness(unsigned char brightness)
+{
+    std::lock_guard<std::mutex> lock(registered_mutex);
+    return(!registered.empty() && registered.front()->SetMixedMasterBrightness(brightness));
+}
+
+bool OpenRGBKeychronUltraPlugin::SaveMixedSettings()
+{
+    std::lock_guard<std::mutex> lock(registered_mutex);
+    return(!registered.empty() && registered.front()->SaveMixedConfiguration());
+}
+
 QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
 {
     QWidget* root = new QWidget();
     QVBoxLayout* main_layout = new QVBoxLayout(root);
 
-    RGBController_KeychronUltra* target = nullptr;
+    bool has_device = false;
     {
         std::lock_guard<std::mutex> lock(registered_mutex);
-        if(!registered.empty())
-            target = registered.front();
+        has_device = !registered.empty();
     }
 
     QLabel* intro = new QLabel(
@@ -219,7 +240,7 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
     intro->setWordWrap(true);
     main_layout->addWidget(intro);
 
-    if(target == nullptr)
+    if(!has_device)
     {
         QLabel* missing = new QLabel("Connect your custom-firmware Keychron Ultra keyboard, then rescan devices.");
         missing->setWordWrap(true);
@@ -269,11 +290,11 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         group_layout->addWidget(speed);
         main_layout->addWidget(group);
 
-        auto apply = [target, layer, enabled, speed, current_color]() {
+        auto apply = [this, layer, enabled, speed, current_color]() {
             int hue = current_color->hsvHue();
             int sat = current_color->hsvSaturation();
             if(hue < 0) hue = 0;
-            target->ConfigureMixedLayer((unsigned char)layer, enabled->isChecked(),
+            ApplyMixedLayer((unsigned char)layer, enabled->isChecked(),
                 (unsigned char)(hue * 255 / 359), (unsigned char)sat,
                 (unsigned char)speed->value());
         };
@@ -306,14 +327,14 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
     main_layout->addWidget(brightness_group);
 
     QObject::connect(brightness, &QSlider::valueChanged, root,
-        [target, brightness_label](int value) {
+        [this, brightness_label](int value) {
             brightness_label->setText(QString("Brightness %1").arg(value));
-            target->SetMixedMasterBrightness((unsigned char)value);
+            ApplyMixedBrightness((unsigned char)value);
         });
 
     QPushButton* save = new QPushButton("Save to keyboard");
     QObject::connect(save, &QPushButton::clicked, root,
-        [target]() { target->SaveMixedConfiguration(); });
+        [this]() { SaveMixedSettings(); });
     main_layout->addWidget(save);
     main_layout->addStretch();
     return(root);
