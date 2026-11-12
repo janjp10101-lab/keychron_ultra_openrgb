@@ -239,3 +239,20 @@ bool RGBController_KeychronUltra::SetMixedMasterBrightness(unsigned char brightn
     active_mode = MODE_MIXED_RGB;
     return(controller->SetMasterBrightness(brightness));
 }
+
+bool RGBController_KeychronUltra::GetMixedLayerConfig(unsigned char layer,
+                                                        KeychronMixedEffect& effect,
+                                                        bool& enabled)
+{
+    std::lock_guard<std::mutex> lock(controller_mutex);
+    if(controller == nullptr || layer >= 3 || !controller->GetMixedEffect(layer, 0, effect))
+        return(false);
+    enabled = effect.effect != 0;
+    return(true);
+}
+
+bool RGBController_KeychronUltra::GetMixedMasterBrightness(unsigned char& brightness)
+{
+    std::lock_guard<std::mutex> lock(controller_mutex);
+    return(controller != nullptr && controller->GetMasterBrightness(brightness));
+}
