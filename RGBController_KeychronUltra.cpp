@@ -9,6 +9,7 @@
 \*---------------------------------------------------------*/
 
 #include "RGBController_KeychronUltra.h"
+#include <algorithm>
 
 
 /*---------------------------------------------------------*\
@@ -17,6 +18,7 @@
 enum
 {
     MODE_DIRECT = 0,
+    MODE_MIXED_RGB = 1,
 };
 
 RGBController_KeychronUltra::RGBController_KeychronUltra(KeychronUltraController* controller_ptr,
@@ -38,6 +40,13 @@ RGBController_KeychronUltra::RGBController_KeychronUltra(KeychronUltraController
     Direct.flags      = MODE_FLAG_HAS_PER_LED_COLOR;
     Direct.color_mode = MODE_COLORS_PER_LED;
     modes.push_back(Direct);
+
+    mode Mixed;
+    Mixed.name       = "Mixed RGB";
+    Mixed.value      = MODE_MIXED_RGB;
+    Mixed.flags      = 0;
+    Mixed.color_mode = MODE_COLORS_PER_LED;
+    modes.push_back(Mixed);
 
     SetupZones();
 
@@ -124,8 +133,11 @@ void RGBController_KeychronUltra::UpdateLEDsLocked()
         return;                   /* torn down by a rescan - nothing to drive */
     }
 
-    controller->EnsureDirect();   // start direct mode + keepalive on first update
-    controller->SetLEDs(colors);
+    if(active_mode == MODE_DIRECT)
+    {
+        controller->EnsureDirect();
+        controller->SetLEDs(colors);
+    }
 
     /*-----------------------------------------------------------------------*\
     | A reconnect can move the keyboard to a different HID node, so refresh   |
@@ -164,15 +176,73 @@ void RGBController_KeychronUltra::DeviceUpdateMode()
     | over and starts the keepalive. Leaving it gives the board back to its   |
     | own lighting.                                                           |
     \*-----------------------------------------------------------------------*/
-    controller->SetDirectMode(active_mode == MODE_DIRECT);
-
     if(active_mode == MODE_DIRECT)
     {
-        UpdateLEDsLocked();       /* we already hold the lock, so do not take it again */
+        controller->SetMixedMode(false);
+        controller->SetDirectMode(true);
+        UpdateLEDsLocked();
+    }
+    else if(active_mode == MODE_MIXED_RGB)
+    {
+        controller->SetDirectMode(false);
+        controller->SetMixedMode(true);
+    }
+    else
+    {
+        controller->SetMixedMode(false);
+        controller->SetDirectMode(false);
     }
 }
 
 void RGBController_KeychronUltra::SetCustomMode()
 {
     active_mode = MODE_DIRECT;
+}
+
+bool RGBController_KeychronUltra::ConfigureMixedLayer(unsigned char layer, bool enabled,
+                                                        unsigned char hue,
+                                                        unsigned char saturation,
+                                                        unsigned char speed)
+{
+    if(layer >= 3)
+        return(false);
+
+    std::lock_guard<std::mutex> lock(controller_mutex);
+    if(controller == nullptr || !controller->SetMixedMode(true))
+        return(false);
+
+    std::vector<unsigned char> masks;
+    if(!controller->GetMixedRegions(0, leds.size(), masks))
+        return(false);
+
+    for(size_t offset = 0; offset < masks.size(); offset += 28)
+    {
+        std::vector<unsigned char> chunk(masks.begin() + offset,
+            masks.begin() + std::min(offset + 28, masks.size()));
+        for(size_t i = 0; i < chunk.size(); i++)
+        {
+            if(enabled)
+                chunk[i] |= (1u << layer);
+            else
+                chunk[i] &= ~(1u << layer);
+        }
+        if(!controller->SetMixedRegions((unsigned int)offset, chunk))
+            return(false);
+    }
+
+    KeychronMixedEffect effect;
+    if(!controller->GetMixedEffect(layer, 0, effect))
+        return(false);
+    static const unsigned char effect_ids[3] = { 23, 3, 22 };
+    effect.effect = effect_ids[layer];
+    effect.hue = hue;
+    effect.saturation = saturation;
+    effect.speed = speed;
+    return(controller->SetMixedEffect(layer, 0, effect));
+}
+
+bool RGBController_KeychronUltra::SaveMixedConfiguration()
+{
+    std::lock_guard<std::mutex> lock(controller_mutex);
+    return(controller != nullptr && controller->SaveMixedSettings());
 }
