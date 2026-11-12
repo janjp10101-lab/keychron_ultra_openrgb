@@ -36,7 +36,7 @@
 | be turned away instead of being driven with the wrong wire |
 | format.                                                    |
 \*---------------------------------------------------------*/
-#define KEYCHRON_ULTRA_PROTOCOL_VERSION 2
+#define KEYCHRON_ULTRA_PROTOCOL_VERSION 3
 
 /*---------------------------------------------------------*\
 | SET_LEDS and GET_LED_INFO carry the LED index in a single  |
@@ -68,6 +68,7 @@ struct KeychronMixedEffect
     unsigned char hue;
     unsigned char saturation;
     unsigned char speed;
+    unsigned char value;
     unsigned int  time;
 };
 
