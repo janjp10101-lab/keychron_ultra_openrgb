@@ -310,6 +310,7 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         QSlider* speed = new QSlider(Qt::Horizontal);
         speed->setRange(0, 255);
         speed->setValue(layers[i].speed);
+        speed->setEnabled(i != 0);
         QLabel* speed_label = new QLabel(QString("Speed %1").arg(layers[i].speed));
 
         QSlider* layer_brightness = new QSlider(Qt::Horizontal);
