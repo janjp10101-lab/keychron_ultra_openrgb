@@ -33,6 +33,7 @@ public:
                                     unsigned char hue, unsigned char saturation,
                                     unsigned char speed);
     bool        SaveMixedConfiguration();
+    bool        SetMixedMasterBrightness(unsigned char brightness);
 
 private:
     void        UpdateLEDsLocked();         /* caller must hold controller_mutex */
