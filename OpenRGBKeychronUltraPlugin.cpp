@@ -310,12 +310,14 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         QSlider* speed = new QSlider(Qt::Horizontal);
         speed->setRange(0, 255);
         speed->setValue(layers[i].speed);
+        speed->setToolTip("Animation speed for this layer (not used by Static keys).");
         speed->setEnabled(i != 0);
         QLabel* speed_label = new QLabel(QString("Speed %1").arg(layers[i].speed));
 
         QSlider* layer_brightness = new QSlider(Qt::Horizontal);
         layer_brightness->setRange(0, 255);
         layer_brightness->setValue(layers[i].brightness);
+        layer_brightness->setToolTip("Brightness for this layer before master brightness.");
         QLabel* layer_brightness_label = new QLabel(
             QString("Layer brightness %1").arg(layers[i].brightness));
 
@@ -363,6 +365,7 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
     QVBoxLayout* brightness_layout = new QVBoxLayout(brightness_group);
     QSlider* brightness = new QSlider(Qt::Horizontal);
     brightness->setRange(0, 255);
+    brightness->setToolTip("Global brightness multiplier for all Mixed RGB layers.");
     unsigned char saved_brightness = 255;
     ReadMixedBrightness(saved_brightness);
     brightness->setValue(saved_brightness);
