@@ -37,12 +37,11 @@
 OpenRGBPluginInfo OpenRGBKeychronUltraPlugin::GetPluginInfo()
 {
     OpenRGBPluginInfo info;
-    info.Name          = "Keychron Ultra (OpenRGB direct)";
-    info.Description    = "Direct per-key RGB control for Keychron V- and Q-series Ultra "
-                          "keyboards running custom ZMK firmware (issue #893).";
-    info.Version        = "0.5.0";
+    info.Name          = "Keychron Ultra (Mixed RGB)";
+    info.Description    = "On-device Mixed RGB layer controls for Keychron V- and Q-series Ultra keyboards.";
+    info.Version        = "0.6.0";
     info.Commit         = "";
-    info.URL            = "https://github.com/naaraxi/keychron_ultra_openrgb";
+    info.URL            = "https://github.com/janjp10101-lab/keychron_ultra_openrgb";
     info.Location       = OPENRGB_PLUGIN_LOCATION_SETTINGS;
     info.Label          = "Keychron Ultra";
     info.TabIconString  = "";
