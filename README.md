@@ -77,8 +77,10 @@ Caps/Num-Lock indicators still overlay on top (handled in firmware).
 2. In OpenRGB, open **Settings > Plugins**, click **Install Plugin**, and select
    the downloaded DLL. OpenRGB copies it into place for you. (Or drop it into
    `%APPDATA%\OpenRGB\plugins\` by hand.)
-3. The keyboard appears under Devices in **Direct** mode, ready to control. No
-   restart needed (if it doesn't show up, restart OpenRGB).
+3. The keyboard appears under Devices with **Mixed RGB** and **Direct** modes.
+   Open Settings > Plugins > Keychron Ultra for the layer controls. The plugin
+   starts in Mixed RGB; select Direct on the device page if you want OpenRGB to
+   stream per-key colors instead. Click **Save to keyboard** to persist settings.
 
 ## Build from source (Linux)
 
@@ -89,7 +91,7 @@ No prebuilt Linux binary is shipped - build the `.so` yourself (quick):
 sudo apt-get install -y build-essential pkg-config qtbase5-dev qtbase5-dev-tools libhidapi-dev
 
 # 2. get this plugin's source and enter it
-git clone https://github.com/naaraxi/keychron_ultra_openrgb.git
+git clone https://github.com/janjp10101-lab/keychron_ultra_openrgb.git
 cd keychron_ultra_openrgb
 
 # 3. clone the OpenRGB source it builds against, into an OpenRGB/ subfolder
