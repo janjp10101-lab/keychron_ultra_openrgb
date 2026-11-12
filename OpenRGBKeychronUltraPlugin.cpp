@@ -175,13 +175,12 @@ void OpenRGBKeychronUltraPlugin::DetectControllers()
             }
 
             /*---------------------------------------------------------------*\
-            | Turn away firmware newer than we know how to talk to. A device   |
-            | that does not answer reports 0, and we let that through, because |
-            | the LED count above already proved it is our firmware and one    |
-            | lost reply should not cost the user their keyboard.              |
+            | Mixed RGB v3 changes the effect record layout to include an      |
+            | independent brightness byte. Require an exact match so we never  |
+            | write a v3 packet into an older firmware's v2 parser.             |
             \*---------------------------------------------------------------*/
             unsigned int proto = ctrl->GetProtocolVersion();
-            if(proto > KEYCHRON_ULTRA_PROTOCOL_VERSION)
+            if(proto != KEYCHRON_ULTRA_PROTOCOL_VERSION)
             {
                 delete ctrl;
                 continue;
