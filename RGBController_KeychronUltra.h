@@ -33,6 +33,9 @@ public:
                                     unsigned char hue, unsigned char saturation,
                                     unsigned char speed, unsigned char brightness);
     bool        SaveMixedConfiguration();
+    bool        GetMixedLayerConfig(unsigned char layer, KeychronMixedEffect& effect,
+                                    bool& enabled);
+    bool        GetMixedMasterBrightness(unsigned char& brightness);
     bool        SetMixedMasterBrightness(unsigned char brightness);
 
 private:
