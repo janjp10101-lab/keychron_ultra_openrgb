@@ -190,11 +190,8 @@ void OpenRGBKeychronUltraPlugin::DetectControllers()
             rm->RegisterRGBController(rgb);
             registered.push_back(rgb);
 
-            /*---------------------------------------------------------------*\
-            | If a rescan just destroyed the previous controller, put the      |
-            | colours back. Does nothing on the first detection of the run.    |
-            \*---------------------------------------------------------------*/
-            ctrl->RestoreLastFrame();
+            /* Mixed RGB is the default on detection. Direct mode repaints
+             * from OpenRGB's current colors if the user selects it. */
         }
         hid_free_enumeration(devs);
     }
