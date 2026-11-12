@@ -44,7 +44,7 @@ private:
     void                DropDeletedControllers();
     bool                ApplyMixedLayer(unsigned char layer, bool enabled,
                                         unsigned char hue, unsigned char saturation,
-                                        unsigned char speed);
+                                        unsigned char speed, unsigned char brightness);
     bool                ApplyMixedBrightness(unsigned char brightness);
     bool                SaveMixedSettings();
 
