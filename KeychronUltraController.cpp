@@ -23,6 +23,7 @@
 #define SUB_MIXED_SET_EFFECTS   0x14
 #define SUB_SET_MIXED_MODE      0x15
 #define SUB_MIXED_SAVE          0x16
+#define SUB_SET_MASTER_BRIGHTNESS 0x17
 
 #define KEEPALIVE_INTERVAL_MS    1500
 
@@ -373,6 +374,13 @@ bool KeychronUltraController::SaveMixedSettings()
     unsigned char pkt[2] = { OPENRGB_CMD, SUB_MIXED_SAVE };
     unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
     return(xfer(pkt, sizeof(pkt), resp) > 0 && resp[0] == OPENRGB_CMD && resp[2] == 0);
+}
+
+bool KeychronUltraController::SetMasterBrightness(unsigned char brightness)
+{
+    unsigned char pkt[3] = { OPENRGB_CMD, SUB_SET_MASTER_BRIGHTNESS, brightness };
+    unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
+    return(xfer(pkt, sizeof(pkt), resp) > 0 && resp[0] == OPENRGB_CMD);
 }
 
 void KeychronUltraController::SetDirectMode(bool enable)
