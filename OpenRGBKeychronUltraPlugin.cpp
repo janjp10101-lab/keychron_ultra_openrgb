@@ -204,11 +204,12 @@ void OpenRGBKeychronUltraPlugin::DetectControllers()
 bool OpenRGBKeychronUltraPlugin::ApplyMixedLayer(unsigned char layer, bool enabled,
                                                        unsigned char hue,
                                                        unsigned char saturation,
-                                                       unsigned char speed)
+                                                       unsigned char speed,
+                                                       unsigned char brightness)
 {
     std::lock_guard<std::mutex> lock(registered_mutex);
     return(!registered.empty() &&
-           registered.front()->ConfigureMixedLayer(layer, enabled, hue, saturation, speed));
+           registered.front()->ConfigureMixedLayer(layer, enabled, hue, saturation, speed, brightness));
 }
 
 bool OpenRGBKeychronUltraPlugin::ApplyMixedBrightness(unsigned char brightness)
@@ -255,13 +256,14 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         unsigned char hue;
         unsigned char saturation;
         unsigned char speed;
+        unsigned char brightness;
         const char* name;
         const char* color;
     };
     LayerUI layers[3] = {
-        { true, 230, 255, 127, "Static keys", "#ff00aa" },
-        { true,  88, 255, 127, "Spiral",      "#aaff00" },
-        { true, 190, 255, 127, "Keypress splash", "#aa00ff" }
+        { true, 230, 255, 127, 255, "Static keys", "#ff00aa" },
+        { true,  88, 255, 127, 255, "Spiral",      "#aaff00" },
+        { true, 190, 255, 127, 255, "Keypress splash", "#aa00ff" }
     };
 
     for(int i = 0; i < 3; i++)
@@ -281,22 +283,30 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         QSlider* speed = new QSlider(Qt::Horizontal);
         speed->setRange(0, 255);
         speed->setValue(layers[i].speed);
-        QLabel* speed_label = new QLabel("Speed 127");
+        QLabel* speed_label = new QLabel(QString("Speed %1").arg(layers[i].speed));
+
+        QSlider* layer_brightness = new QSlider(Qt::Horizontal);
+        layer_brightness->setRange(0, 255);
+        layer_brightness->setValue(layers[i].brightness);
+        QLabel* layer_brightness_label = new QLabel(
+            QString("Layer brightness %1").arg(layers[i].brightness));
 
         controls->addWidget(enabled);
         controls->addWidget(color_button);
         group_layout->addLayout(controls);
         group_layout->addWidget(speed_label);
         group_layout->addWidget(speed);
+        group_layout->addWidget(layer_brightness_label);
+        group_layout->addWidget(layer_brightness);
         main_layout->addWidget(group);
 
-        auto apply = [this, layer, enabled, speed, current_color]() {
+        auto apply = [this, layer, enabled, speed, layer_brightness, current_color]() {
             int hue = current_color->hsvHue();
             int sat = current_color->hsvSaturation();
             if(hue < 0) hue = 0;
             ApplyMixedLayer((unsigned char)layer, enabled->isChecked(),
                 (unsigned char)(hue * 255 / 359), (unsigned char)sat,
-                (unsigned char)speed->value());
+                (unsigned char)speed->value(), (unsigned char)layer_brightness->value());
         };
 
         QObject::connect(enabled, &QCheckBox::toggled, root,
@@ -304,6 +314,11 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         QObject::connect(speed, &QSlider::valueChanged, root,
             [apply, speed_label](int value) {
                 speed_label->setText(QString("Speed %1").arg(value));
+                apply();
+            });
+        QObject::connect(layer_brightness, &QSlider::valueChanged, root,
+            [apply, layer_brightness_label](int value) {
+                layer_brightness_label->setText(QString("Layer brightness %1").arg(value));
                 apply();
             });
         QObject::connect(color_button, &QPushButton::clicked, root,
