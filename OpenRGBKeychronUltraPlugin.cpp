@@ -10,6 +10,15 @@
 #include <thread>
 #include <hidapi.h>
 #include <QLabel>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGroupBox>
+#include <QCheckBox>
+#include <QSlider>
+#include <QPushButton>
+#include <QColorDialog>
+#include <QColor>
+#include <QFormLayout>
 
 
 /*---------------------------------------------------------------------------*\
@@ -194,19 +203,120 @@ void OpenRGBKeychronUltraPlugin::DetectControllers()
 
 QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
 {
-    /*-----------------------------------------------------------------------*\
-    | OpenRGB's OpenRGBPluginContainer does plugin_widget->setParent(this)    |
-    | with NO null check, so a plugin MUST return a valid QWidget even when   |
-    | it only registers a device. Return a small info label.                 |
-    \*-----------------------------------------------------------------------*/
-    QLabel* label = new QLabel(
-        "Keychron Ultra series (custom ZMK firmware)\n\n"
-        "Control your keyboard from its device page: set the mode to \"Direct\" "
-        "to drive the per-key RGB from OpenRGB.");
-    label->setAlignment(Qt::AlignCenter);
-    label->setWordWrap(true);
-    label->setMargin(20);
-    return(label);
+    QWidget* root = new QWidget();
+    QVBoxLayout* main_layout = new QVBoxLayout(root);
+
+    RGBController_KeychronUltra* target = nullptr;
+    {
+        std::lock_guard<std::mutex> lock(registered_mutex);
+        if(!registered.empty())
+            target = registered.front();
+    }
+
+    QLabel* intro = new QLabel(
+        "Keychron Ultra Mixed RGB\n"
+        "The keyboard renders these effects locally. OpenRGB only sends settings.");
+    intro->setWordWrap(true);
+    main_layout->addWidget(intro);
+
+    if(target == nullptr)
+    {
+        QLabel* missing = new QLabel("Connect your custom-firmware Keychron Ultra keyboard, then rescan devices.");
+        missing->setWordWrap(true);
+        main_layout->addWidget(missing);
+        main_layout->addStretch();
+        return(root);
+    }
+
+    struct LayerUI
+    {
+        bool enabled;
+        unsigned char hue;
+        unsigned char saturation;
+        unsigned char speed;
+        const char* name;
+        const char* color;
+    };
+    LayerUI layers[3] = {
+        { true, 230, 255, 127, "Static keys", "#ff00aa" },
+        { true,  88, 255, 127, "Spiral",      "#aaff00" },
+        { true, 190, 255, 127, "Keypress splash", "#aa00ff" }
+    };
+
+    for(int i = 0; i < 3; i++)
+    {
+        const int layer = i;
+        QGroupBox* group = new QGroupBox(layers[i].name);
+        QVBoxLayout* group_layout = new QVBoxLayout(group);
+        QHBoxLayout* controls = new QHBoxLayout();
+
+        QCheckBox* enabled = new QCheckBox("Enabled");
+        enabled->setChecked(layers[i].enabled);
+
+        QPushButton* color_button = new QPushButton("Choose color");
+        QColor current_color(layers[i].color);
+        color_button->setStyleSheet(QString("background-color: %1;").arg(current_color.name()));
+
+        QSlider* speed = new QSlider(Qt::Horizontal);
+        speed->setRange(0, 255);
+        speed->setValue(layers[i].speed);
+        QLabel* speed_label = new QLabel("Speed 127");
+
+        controls->addWidget(enabled);
+        controls->addWidget(color_button);
+        group_layout->addLayout(controls);
+        group_layout->addWidget(speed_label);
+        group_layout->addWidget(speed);
+        main_layout->addWidget(group);
+
+        auto apply = [target, layer, enabled, speed, &current_color]() {
+            int hue = current_color.hsvHue();
+            int sat = current_color.hsvSaturation();
+            if(hue < 0) hue = 0;
+            target->ConfigureMixedLayer((unsigned char)layer, enabled->isChecked(),
+                (unsigned char)(hue * 255 / 359), (unsigned char)sat,
+                (unsigned char)speed->value());
+        };
+
+        QObject::connect(enabled, &QCheckBox::toggled, root,
+            [apply](bool) { apply(); });
+        QObject::connect(speed, &QSlider::valueChanged, root,
+            [apply, speed_label](int value) {
+                speed_label->setText(QString("Speed %1").arg(value));
+                apply();
+            });
+        QObject::connect(color_button, &QPushButton::clicked, root,
+            [root, color_button, &current_color, apply]() {
+                QColor chosen = QColorDialog::getColor(current_color, root, "Layer color");
+                if(!chosen.isValid()) return;
+                current_color = chosen;
+                color_button->setStyleSheet(QString("background-color: %1;").arg(chosen.name()));
+                apply();
+            });
+    }
+
+    QGroupBox* brightness_group = new QGroupBox("Master brightness");
+    QVBoxLayout* brightness_layout = new QVBoxLayout(brightness_group);
+    QSlider* brightness = new QSlider(Qt::Horizontal);
+    brightness->setRange(0, 255);
+    brightness->setValue(255);
+    QLabel* brightness_label = new QLabel("Brightness 255");
+    brightness_layout->addWidget(brightness_label);
+    brightness_layout->addWidget(brightness);
+    main_layout->addWidget(brightness_group);
+
+    QObject::connect(brightness, &QSlider::valueChanged, root,
+        [target, brightness_label](int value) {
+            brightness_label->setText(QString("Brightness %1").arg(value));
+            target->SetMixedMasterBrightness((unsigned char)value);
+        });
+
+    QPushButton* save = new QPushButton("Save to keyboard");
+    QObject::connect(save, &QPushButton::clicked, root,
+        [target]() { target->SaveMixedConfiguration(); });
+    main_layout->addWidget(save);
+    main_layout->addStretch();
+    return(root);
 }
 
 QMenu* OpenRGBKeychronUltraPlugin::GetTrayMenu()
