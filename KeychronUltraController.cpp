@@ -351,8 +351,9 @@ bool KeychronUltraController::GetMixedEffect(unsigned char layer, unsigned char 
     effect.hue = resp[4];
     effect.saturation = resp[5];
     effect.speed = resp[6];
-    effect.time = (unsigned int)resp[7] | ((unsigned int)resp[8] << 8)
-                | ((unsigned int)resp[9] << 16) | ((unsigned int)resp[10] << 24);
+    effect.value = resp[7];
+    effect.time = (unsigned int)resp[8] | ((unsigned int)resp[9] << 8)
+                | ((unsigned int)resp[10] << 16) | ((unsigned int)resp[11] << 24);
     return(true);
 }
 
@@ -361,8 +362,9 @@ bool KeychronUltraController::SetMixedEffect(unsigned char layer, unsigned char 
 {
     if(layer >= 3 || slot >= 3)
         return(false);
-    unsigned char pkt[13] = { OPENRGB_CMD, SUB_MIXED_SET_EFFECTS, layer, slot, 1,
+    unsigned char pkt[14] = { OPENRGB_CMD, SUB_MIXED_SET_EFFECTS, layer, slot, 1,
                               effect.effect, effect.hue, effect.saturation, effect.speed,
+                              effect.value,
                               (unsigned char)(effect.time & 0xFF),
                               (unsigned char)((effect.time >> 8) & 0xFF),
                               (unsigned char)((effect.time >> 16) & 0xFF),
