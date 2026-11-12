@@ -65,9 +65,11 @@ KeychronUltraController::~KeychronUltraController()
 
     if(dev)
     {
-        /* Best-effort: return control to onboard lighting on unload. */
-        unsigned char pkt[3] = { OPENRGB_CMD, SUB_SET_DIRECT_MODE, 0 };
-        xfer_locked(pkt, sizeof(pkt), nullptr);
+        /* Best-effort: restore the previous onboard mode on unload. */
+        unsigned char mixed_pkt[3] = { OPENRGB_CMD, SUB_SET_MIXED_MODE, 0 };
+        xfer_locked(mixed_pkt, sizeof(mixed_pkt), nullptr);
+        unsigned char direct_pkt[3] = { OPENRGB_CMD, SUB_SET_DIRECT_MODE, 0 };
+        xfer_locked(direct_pkt, sizeof(direct_pkt), nullptr);
         hid_close(dev);
         dev = nullptr;
     }
