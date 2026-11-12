@@ -223,6 +223,22 @@ bool OpenRGBKeychronUltraPlugin::SaveMixedSettings()
     return(!registered.empty() && registered.front()->SaveMixedConfiguration());
 }
 
+bool OpenRGBKeychronUltraPlugin::ReadMixedLayer(unsigned char layer,
+                                                       KeychronMixedEffect& effect,
+                                                       bool& enabled)
+{
+    std::lock_guard<std::mutex> lock(registered_mutex);
+    return(!registered.empty() &&
+           registered.front()->GetMixedLayerConfig(layer, effect, enabled));
+}
+
+bool OpenRGBKeychronUltraPlugin::ReadMixedBrightness(unsigned char& brightness)
+{
+    std::lock_guard<std::mutex> lock(registered_mutex);
+    return(!registered.empty() &&
+           registered.front()->GetMixedMasterBrightness(brightness));
+}
+
 QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
 {
     QWidget* root = new QWidget();
@@ -257,7 +273,6 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         unsigned char speed;
         unsigned char brightness;
         const char* name;
-        const char* color;
     };
     LayerUI layers[3] = {
         { true, 230, 255, 127, 255, "Static keys", "#ff00aa" },
@@ -276,7 +291,9 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         enabled->setChecked(layers[i].enabled);
 
         QPushButton* color_button = new QPushButton("Choose color");
-        std::shared_ptr<QColor> current_color = std::make_shared<QColor>(layers[i].color);
+        std::shared_ptr<QColor> current_color = std::make_shared<QColor>(
+            QColor::fromHsv((int)layers[i].hue * 359 / 255,
+                            (int)layers[i].saturation, 255));
         color_button->setStyleSheet(QString("background-color: %1;").arg(current_color->name()));
 
         QSlider* speed = new QSlider(Qt::Horizontal);
@@ -334,8 +351,10 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
     QVBoxLayout* brightness_layout = new QVBoxLayout(brightness_group);
     QSlider* brightness = new QSlider(Qt::Horizontal);
     brightness->setRange(0, 255);
-    brightness->setValue(255);
-    QLabel* brightness_label = new QLabel("Brightness 255");
+    unsigned char saved_brightness = 255;
+    ReadMixedBrightness(saved_brightness);
+    brightness->setValue(saved_brightness);
+    QLabel* brightness_label = new QLabel(QString("Brightness %1").arg(saved_brightness));
     brightness_layout->addWidget(brightness_label);
     brightness_layout->addWidget(brightness);
     main_layout->addWidget(brightness_group);
