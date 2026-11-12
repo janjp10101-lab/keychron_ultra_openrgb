@@ -289,8 +289,7 @@ bool KeychronUltraController::SetMixedMode(bool enable)
     unsigned char pkt[3] = { OPENRGB_CMD, SUB_SET_MIXED_MODE,
                              (unsigned char)(enable ? 1 : 0) };
     unsigned char resp[KEYCHRON_ULTRA_EPSIZE] = { 0 };
-    return(xfer(pkt, sizeof(pkt), resp) > 0 && resp[0] == OPENRGB_CMD
-           && resp[2] == 0);
+    return(xfer(pkt, sizeof(pkt), resp) > 0 && resp[0] == OPENRGB_CMD);
 }
 
 bool KeychronUltraController::GetMixedInfo(unsigned char& layers,
