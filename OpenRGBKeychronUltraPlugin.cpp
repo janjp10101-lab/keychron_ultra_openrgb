@@ -19,6 +19,7 @@
 #include <QColorDialog>
 #include <QColor>
 #include <QFormLayout>
+#include <memory>
 
 
 /*---------------------------------------------------------------------------*\
@@ -254,8 +255,8 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         enabled->setChecked(layers[i].enabled);
 
         QPushButton* color_button = new QPushButton("Choose color");
-        QColor current_color(layers[i].color);
-        color_button->setStyleSheet(QString("background-color: %1;").arg(current_color.name()));
+        std::shared_ptr<QColor> current_color = std::make_shared<QColor>(layers[i].color);
+        color_button->setStyleSheet(QString("background-color: %1;").arg(current_color->name()));
 
         QSlider* speed = new QSlider(Qt::Horizontal);
         speed->setRange(0, 255);
@@ -269,9 +270,9 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         group_layout->addWidget(speed);
         main_layout->addWidget(group);
 
-        auto apply = [target, layer, enabled, speed, &current_color]() {
-            int hue = current_color.hsvHue();
-            int sat = current_color.hsvSaturation();
+        auto apply = [target, layer, enabled, speed, current_color]() {
+            int hue = current_color->hsvHue();
+            int sat = current_color->hsvSaturation();
             if(hue < 0) hue = 0;
             target->ConfigureMixedLayer((unsigned char)layer, enabled->isChecked(),
                 (unsigned char)(hue * 255 / 359), (unsigned char)sat,
@@ -286,10 +287,10 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
                 apply();
             });
         QObject::connect(color_button, &QPushButton::clicked, root,
-            [root, color_button, &current_color, apply]() {
-                QColor chosen = QColorDialog::getColor(current_color, root, "Layer color");
+            [root, color_button, current_color, apply]() {
+                QColor chosen = QColorDialog::getColor(*current_color, root, "Layer color");
                 if(!chosen.isValid()) return;
-                current_color = chosen;
+                *current_color = chosen;
                 color_button->setStyleSheet(QString("background-color: %1;").arg(chosen.name()));
                 apply();
             });
