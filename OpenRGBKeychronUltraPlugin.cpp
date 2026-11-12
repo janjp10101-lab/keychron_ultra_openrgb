@@ -275,10 +275,24 @@ QWidget* OpenRGBKeychronUltraPlugin::GetWidget()
         const char* name;
     };
     LayerUI layers[3] = {
-        { true, 230, 255, 127, 255, "Static keys", "#ff00aa" },
-        { true,  88, 255, 127, 255, "Spiral",      "#aaff00" },
-        { true, 190, 255, 127, 255, "Keypress splash", "#aa00ff" }
+        { true, 230, 255, 127, 255, "Static keys" },
+        { true,  88, 255, 127, 255, "Spiral" },
+        { true, 190, 255, 127, 255, "Keypress splash" }
     };
+
+    for(int i = 0; i < 3; i++)
+    {
+        KeychronMixedEffect saved;
+        bool saved_enabled = true;
+        if(ReadMixedLayer((unsigned char)i, saved, saved_enabled))
+        {
+            layers[i].enabled = saved_enabled;
+            layers[i].hue = saved.hue;
+            layers[i].saturation = saved.saturation;
+            layers[i].speed = saved.speed;
+            layers[i].brightness = saved.value;
+        }
+    }
 
     for(int i = 0; i < 3; i++)
     {
