@@ -211,30 +211,11 @@ bool RGBController_KeychronUltra::ConfigureMixedLayer(unsigned char layer, bool 
     if(controller == nullptr || !controller->SetMixedMode(true))
         return(false);
 
-    std::vector<unsigned char> masks;
-    if(!controller->GetMixedRegions(0, leds.size(), masks))
-        return(false);
-
-    for(size_t offset = 0; offset < masks.size(); offset += 28)
-    {
-        std::vector<unsigned char> chunk(masks.begin() + offset,
-            masks.begin() + std::min(offset + 28, masks.size()));
-        for(size_t i = 0; i < chunk.size(); i++)
-        {
-            if(enabled)
-                chunk[i] |= (1u << layer);
-            else
-                chunk[i] &= ~(1u << layer);
-        }
-        if(!controller->SetMixedRegions((unsigned int)offset, chunk))
-            return(false);
-    }
-
     KeychronMixedEffect effect;
     if(!controller->GetMixedEffect(layer, 0, effect))
         return(false);
     static const unsigned char effect_ids[3] = { 23, 3, 22 };
-    effect.effect = effect_ids[layer];
+    effect.effect = enabled ? effect_ids[layer] : 0;
     effect.hue = hue;
     effect.saturation = saturation;
     effect.speed = speed;
